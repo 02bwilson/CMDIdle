@@ -4,45 +4,48 @@
         "price" : "10",
         "currency" : "money",
         "effect" : "mps",
-        "effect_ar" : "+",
         "effect_magnitude": "1.0",
         "note" : "A basic terminal",
-        "prereq" : [0]
+        "prereq" : ["0"]
     },
     "Intelligent Terminal": {
         "id" : "2",
         "price" : "50",
         "currency" : "money",
         "effect" : "mps",
-        "effect_ar" : "+",
         "effect_magnitude" : "3.0",
-        "prereq" : [1]
+        "prereq" : ["1"]
     },
     "Text Terminal": {
         "id" : "3",
         "price" : "250",
         "currency" : "money",
         "effect" : "mult",
-        "effect_ar" : "+",
         "effect_magnitude" : "0.25",
-        "prereq" : [2]
+        "prereq" : ["2"]
     },
     "Graphical Terminal": {
         "id" : "4",
         "price" : "350",
         "currency" : "money",
         "effect" : "mps",
-        "effect_ar" : "+",
         "effect_magnitude" : "5",
-        "prereq" : [3]
+        "prereq" : ["3"]
     },
-    "Faster Processing": {
+    "Faster CPU": {
         "id" : "5",
         "price" : "350",
         "currency" : "money",
         "effect" : "mult",
-        "effect_ar" : "+",
         "effect_magnitude" : "0.25",
-        "prereq" : [3]
+        "prereq" : ["3"]
+    },
+    "Better Image Processing" : {
+        "id" : "6",
+        "price" : "750",
+        "currency" : "money",
+        "effect" : "mps",
+        "effect_magnitude" : "5",
+        "prereq" : ["4", "5"]
     }
 }

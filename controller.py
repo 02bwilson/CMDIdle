@@ -2,7 +2,6 @@
 
 # Python Imports
 import os, sys
-from typing import Text
 import yaml
 import time
 import threading
@@ -15,7 +14,6 @@ import command_handler
 import user
 
 # External Imports
-from ctypes import resize
 import easygui
 from termcolor import colored
 
@@ -32,8 +30,6 @@ class game():
         self.user_data = dict()
         self.command_list = list()
         self.command_list.append(["help", "Helpful information for each command."])
-        self.command_list.append(["login", "Login to your account."])
-        self.command_list.append(["register", "Register for a new account."])
         self.commandHandler = command_handler.command_handler(self.user)
         # Init the game 
         self.init_game()
@@ -42,23 +38,26 @@ class game():
         # Determine if user account saved
         if (self.user_data['user']['email'] not in {'', None,}) and (self.user_data['user']['password_hash'] not in {'', None}):
             try:
+                print(self.user_data['user']['email'], self.user_data['user']['password_hash'])
                 self.commandHandler.validatePassword(self.user_data['user']['email'], self.user_data['user']['password_hash'], config_flag=True)
-                # print("Welcome {}!".format(self.user_data['user']['email']))
-                # self.await_command()
-            except:
-                print("There was a problem with your stored user info, please re-login.")
+                self.await_command()
+            except Exception as e:
+                print("There was a problem with your stored user info, please re-login.", e)
                 self.execute_command("login")
             self.command_list.append(["mps", "Prints your current money per second"],
                                      ["ccolor", "Changes the color of your input cursor"])
             
             # Begin ticking
+            self.tick_count = 0
             self.begin_ticking()
             
         else: 
             self.command_list.append(["login", "Login to your account."])
             self.command_list.append(["register", "Register for a new account."])
             self.present_welcome()
-            
+            # Begin ticking
+            self.tick_count = 0
+            self.begin_ticking()
     
     def init_game(self):
         # Load user config
@@ -117,8 +116,10 @@ class game():
     
     def tick(self, mps):
         time.sleep(1)
+        self.tick_count += 1
         self.set_window_title("CMDIdle", self.user.getBal(), self.user.getMps())
-        self.bal += (mps * (1.0 + self.mult))
+        self.bal += int((mps * (1.0 + self.mult)))
+        print(self.tick_count)
         self.tick(self.mps)
     
     def begin_ticking(self):
@@ -126,7 +127,6 @@ class game():
         ticking_thread = threading.Thread(target=self.tick, args=(self.mps, ))
         ticking_thread.daemon = True
         ticking_thread.start()
-            
         
     def set_window_title(self, new_title, bal=0, mps=1):
         title = new_title

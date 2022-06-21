@@ -1,9 +1,19 @@
 from distutils.core import setup
-import py2exe
+import py2exe, sys, os
 
-setup(console=['main.py'])
-
-import sys
-main_script_dir = "../main.py"
-main_folder = main_script_dir.rsplit("\\",1)[0]
-sys.path.append(main_folder)
+sys.argv.append('py2exe')
+setup( 
+  options = {         
+    'py2exe' : {
+        'compressed': 1, 
+        'optimize': 2,
+        'bundle_files': 3, #Options 1 & 2 do not work on a 64bit system
+        'dist_dir': 'dist',  # Put .exe in dist/
+        'xref': False,
+        'skip_archive': False,
+        'ascii': False,
+        }
+        },                   
+  zipfile=None, 
+  console = ['controller.py'],
+)

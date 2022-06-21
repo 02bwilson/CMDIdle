@@ -1,15 +1,19 @@
 # Command handler By Bryce W
 
 # External Imports
+# TODO: Cleanup imports
 import psycopg2
 import bcrypt
 from email_validator import validate_email
 from pwinput import pwinput
-import yaml
+import scripts.upgrades as upgrades
+import time
+from mail_handler import email_handler
 
 class command_handler():
     def __init__(self, user_obj):
         self.user = user_obj
+        self.upgrade_handler = upgrades.upgrades()
         self.connection = None
         self.pos = None
 
@@ -22,59 +26,62 @@ class command_handler():
                 
                 
         elif cmd.lower() == 'login':
+            self.connect()
             try:
-                self.connect()
-                try:
-                    user_email = input("Email: ")
-                    user_password = pwinput("Password: ")
-                    # Verify user creds
-                    self.verify_cred(user_email, user_password)
-                    # Fetch user data/see if user is truly already created
-                    self.fetch(user_email)
-                    self.validatePassword(user_email, user_password)
-                except Exception as e:
-                    print("Error finding an account with these details (Username/Password incorrect).", e)
+                user_email = input("Email: ")
+                user_password = pwinput("Password: ")
+                # Verify user creds
+                self.verify_cred(user_email, user_password)
+                # verify_email user data/see if user is truly already created
+                self.verify_email(user_email)
+                self.validatePassword(user_email, user_password)
+                print("Logged in!")
             except:
-                print("Servers are currently down for maintenance.")
+                print("Error finding an account with these details (Username/Password incorrect).")
                 
                 
                 
         elif cmd.lower() == 'register':
+
+            self.connect()
             try:
-                self.connect()
-                try:
-                    user_email = input("Email: ")
-                    user_password = pwinput("Password: ")
-                    # Verify user creds
-                    self.verify_cred(user_email, user_password)
-                    # See if user is already created
-                    created = self.fetch(user_email)
-                    if created == True:
-                        print("A user with this email already exists.")
-                    else: 
-                        try:
-                            self.create_account(user_email, user_password)
-                        except Exception as e:
-                            print("Error creating account", e)
-                except Exception as e:
-                    print("A fatal error occured, please fix the problems listed.", e)
+                user_email = input("Email: ")
+                user_password = pwinput("Password: ")
+                # Verify user creds
+                self.verify_cred(user_email, user_password)
+                # See if user is already created
+                created = self.verify_email(user_email)
+                if created == True:
+                    print("A user with this email already exists.")
+                else: 
+                    try:
+                        self.create_account(user_email, user_password)
+                        print("Account created!")
+                        mailSender = email_handler()
+                        mailSender.send_register_mail(user_email)
+                    except:
+                        print("Error creating account")
             except:
-                print("Servers are currently down for maintenance.")
+                print("A fatal error occured, please fix the problems listed.")
                 
                 
-                
+        elif cmd.lower() == 'upgrade':
+            return
             
         else: 
             print("Oops! Something went wrong.")
             
     def connect(self):
-        self.connection = psycopg2.connect(
-        host="localhost",
-        port="5432",
-        database="cmdidle_001",
-        user="postgres",
-        password="djkfsdkj23095042323%#@%$asdasd")
-        self.pos = self.connection.cursor()
+        try:
+            self.connection = psycopg2.connect(
+            host="",
+            port="",
+            database="",
+            user="",
+            password="")
+            self.pos = self.connection.cursor()
+        except:
+            print("Servers are currently down for maintenance.")
         
     def verify_cred(self, email, password):
         try:
@@ -92,11 +99,11 @@ class command_handler():
             print("Please enter a valid email.")
             raise Exception
 
-    def fetch(self, email):
+    def verify_email(self, email):
         self.pos = self.connection.cursor()
         query = "SELECT COUNT(*) FROM app.cmdidle_users_001 WHERE EMAIL=%s"
         self.pos.execute(query, (email, ))
-        count = self.pos.fetchone()
+        count = self.pos.verify_fetchone()
         for item in count:
             if str(count)[1] == '1':
                 return True
@@ -119,26 +126,26 @@ class command_handler():
     
     def loadUserData(self, email, password):
         data = list()
-        print("Logged in!")
         self.pos = self.connection.cursor()
         query = "SELECT balance, upgrade_history FROM app.cmdidle_users_001 WHERE email=%s"
         self.pos.execute(query, (email, ))
-        results = self.pos.fetchone()
+        results = self.pos.verify_fetchone()
         for row in results:
             data.append(row)
         self.user.setBal(data[0])
-        # TODO : Owned upgrade handler
-            
+        self.upgrade_handler.fetchUserUpgrades(self.user, data[1])
+        self.pos.close()
 
     def validatePassword(self, email, password, config_flag=False):
         self.pos = self.connection.cursor()
         account_query = "SELECT password_hash FROM app.cmdidle_users_001 WHERE email=%s"
         self.pos.execute(account_query, (email, ))
-        result = str(self.pos.fetchone())[2:-3]
-        if config_flag is True:
+        result = str(self.pos.verify_fetchone())[2:-3]
+        if config_flag == True:
+            self.connect()
             result = password
-        elif (bcrypt.checkpw(password.encode('utf-8'), result.encode('utf-8'))) == True:
-            self.loadUserData(email, password)
+        if (bcrypt.checkpw(password.encode('utf-8'), result.encode('utf-8'))) == True:
+            # self.loadUserData(email, password)
             self.pos.close()
         else:
             self.pos.close()
